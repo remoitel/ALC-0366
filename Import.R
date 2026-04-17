@@ -1,4 +1,4 @@
-ACC1_raw <- read_excel("ACC0001-XX_Y1.xlsx")
+ACC1_raw <- read_excel("ALC-0366_36mteY1Y2Y8.xlsx")
 
 #Überflüssige Spalten
 wegdamit <- c("Lev", "Operation","Operation short text", "Physical sample", "Inspection unit number", "Plant", "Material","Shelf Life Exp. Date",
@@ -7,7 +7,7 @@ wegdamit <- c("Lev", "Operation","Operation short text", "Physical sample", "Ins
 
 ACC1 <- ACC1_raw %>%
   filter(Lev==1) %>% 
-  filter(!is.na(`UD code`) )%>% 
+  # filter(!is.na(`UD code`) )%>% 
   select(-any_of(wegdamit)) %>%
   select(-starts_with('Specification'), -starts_with( 'A/R'),-starts_with('Unit'),-starts_with('QC '),-contains("No QC")) %>% 
   select(-contains("ICP-")) %>%  #ohne ICP-Resultate   
@@ -24,18 +24,21 @@ ACC1 <- ACC1_raw %>%
   mutate_at(vars(temp), factor) %>%  #Faktorumwandlung
   mutate_at(vars(month), as.numeric) %>%  
   relocate(any_of(c("temp","month")), .after = Batch) |> 
-  mutate(Purity = coalesce(`Purity ALC-0366...144`,`Purity ALC-0366...288`) ,.keep = "unused") |> 
-  mutate("Sum of all impurities" = coalesce(`Sum of all impurities...284`,`Sum of all impurities...148`) ,.keep = "unused") |> 
-  select("Batch", "temp", "month", "Inspection Lot", "IL short text", 
-          "Appearance color", "Appearance texture",  "Water content",  "Purity", "Sum of all impurities", 
+  mutate(Purity = coalesce(`Purity ALC-0366...428`,`Purity ALC-0366...216`) ,.keep = "unused") |> 
+  mutate("Sum of all impurities" = coalesce(`Sum of all impurities...424`,`Sum of all impurities...220`) ,.keep = "unused") |> 
+  select("Batch", "temp", "month", "Inspection Lot", "IL short text",  #""Level Unknown 3 (≥ 0.05%)" = gleiche Werte wie Level Unknown 3 aber nach RRT sortiert (nicht nach Grösse)
+         "Appearance color", "Appearance texture",  "Water content",  "Purity", "Sum of all impurities", 
          "Assay ALC-0366", "Microbial Count (TAMC)", "Microbial Count (TYMC)", 
          "Level Unknown 1", "Level Unknown 2", "Level Unknown 3", "Level Unknown 4", "Level Unknown 5", "Level Unknown 6", 
          "Level Unknown 7", "Level Unknown 8", "Level Unknown 9", "Level Unknown 10", 
          "Level Impurity11", "Level Impurity12", "Level Impurity13", "Level Impurity14", 
          "Level Impurity15", "Level Impurity16", "Level Impurity17", "Level Impurity18", 
-         "Level Impurity19", "Level Impurity20"
+         "Level Impurity19", "Level Impurity20",  "RRT Unknown 1 (≥ 0.05%)" , "RRT Unknown 2 (≥ 0.05%)" , "RRT Unknown 3 (≥ 0.05%)",
+         "RRT Unknown 4 (≥ 0.05%)" , "RRT Unknown 5 (≥ 0.05%)" , "RRT Unknown 6 (≥ 0.05%)" , "RRT Unknown 7 (≥ 0.05%)" ,
+         "RRT Unknown 8 (≥ 0.05%)" , "RRT Unknown 9 (≥ 0.05%)" , "RRT Unknown 10 (≥ 0.05%)" 
          )
-  
+  # wo sind HPLC Resultate für T0 und T3?? In FlexRep/QA33 nichts vorhanden, nicht einmal die Chromatogramme
+
 
 # ACC1$inert[ACC1$`Inspection Lot`=="160000026252"] <- "not inert"
 
@@ -63,11 +66,12 @@ spalten <- colnames(ACC1)
 spalten <- gsub("\\.{3}\\d{1,3}","",spalten) #3 Punkte erkennen sowie 1-3 Ziffern
 # spalten <- gsub("\\Assay ?","",spalten) #Assay entfernen
 # spalten <- gsub("\\Imp. ","",spalten) #Imp. entfernen
-names(ACC1_selection) <- spalten #neue, korrigierte Namen
+names(ACC1) <- spalten #neue, korrigierte Namen
 
 ACC1_long<- ACC1 %>% 
   # select(1:26) %>% # ohne MiBi
    select(-c("Inspection Lot","IL short text")) %>% 
   pivot_longer(!c(Batch, month,temp), names_to = "analy_param", values_to = "value") |>     # alle zu long ausser months und temp
   mutate_at(vars(value), as.numeric)
+
 
